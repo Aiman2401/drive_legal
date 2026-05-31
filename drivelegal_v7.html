@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DriveLegal — Traffic Law Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f7f0;
+    --surface: #ffffff;
+    --surface2: #e8f4e8;
+    --border: #b8d8b8;
+    --accent: #1a6b2a;
+    --accent2: #2196a0;
+    --accent3: #e65c00;
+    --text: #1a2e1a;
+    --text-dim: #4a6b4a;
+    --text-dimmer: #8aaa8a;
+    --green: #1a6b2a;
+    --red: #cc2200;
+    --orange: #e65c00;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(26,107,42,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* ── Header ── */
+  header { padding: 32px 0 24px; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+  .header-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon { width: 40px; height: 40px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .logo-text { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.8px; }
+  .logo-text span { color: #1a6b2a; }
+  .tagline { font-size: 11px; color: var(--text-dim); letter-spacing: 0.3px; text-transform: uppercase; }
+  .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .status-badge { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 100px; padding: 6px 14px; font-size: 11px; color: #1a6b2a; letter-spacing: 0.2px; }
+  .offline-badge { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 100px; padding: 6px 14px; font-size: 11px; color: var(--text-dim); letter-spacing: 0.2px; }
+  .offline-badge.offline { color: var(--orange); border-color: var(--orange); }
+  .status-dot { width: 6px; height: 6px; background: #1a6b2a; border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px; }
+  .tab { flex: 1; background: none; border: none; border-radius: 8px; color: var(--text-dim); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 11px; letter-spacing: 0.2px; padding: 10px 8px; text-transform: uppercase; transition: all 0.2s; text-align: center; }
+  .tab.active { background: #1a6b2a; color: #ffffff; border: 1px solid #1a6b2a; }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* ── Panels ── */
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes slideIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── Coverage cards ── */
+  .coverage { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 24px; }
+  .coverage-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; transition: border-color 0.2s; }
+  .coverage-card:hover { border-color: var(--text-dim); }
+  .coverage-flag { font-size: 24px; margin-bottom: 8px; }
+  .coverage-country { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .coverage-detail { font-size: 11px; color: var(--text-dim); line-height: 1.5; margin-bottom: 8px; }
+  .coverage-count { font-size: 11px; color: var(--green); }
+
+  /* ── API Key ── */
+  .api-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .api-label { font-size: 11px; color: var(--text-dim); letter-spacing: 0.2px; text-transform: uppercase; white-space: nowrap; }
+  .api-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 12px; padding: 8px 14px; min-width: 200px; transition: border-color 0.2s; }
+  .api-input:focus { outline: none; border-color: var(--accent); }
+  .api-save-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--accent); font-family: 'Inter', sans-serif; font-size: 12px; padding: 8px 16px; cursor: pointer; transition: all 0.2s; }
+  .api-save-btn:hover { background: rgba(26,107,42,0.1); border-color: #1a6b2a; }
+  .api-status { font-size: 11px; padding: 4px 10px; border-radius: 100px; white-space: nowrap; }
+  .api-status.set { background: rgba(71,255,178,0.1); color: var(--green); border: 1px solid rgba(71,255,178,0.2); }
+  .api-status.unset { background: rgba(255,107,71,0.1); color: var(--accent3); border: 1px solid rgba(255,107,71,0.2); }
+
+  /* ── Controls ── */
+  .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .control-group { display: flex; flex-direction: column; gap: 6px; }
+  .control-label { font-size: 10px; color: var(--text-dim); letter-spacing: 0.5px; text-transform: uppercase; font-weight: 600; }
+  select { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; padding: 10px 14px; width: 100%; cursor: pointer; transition: border-color 0.2s; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238888aa' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+  select:focus { outline: none; border-color: var(--accent); }
+  select option { background: var(--surface2); }
+
+  /* ── Hotspot Warning Banner ── */
+  .hotspot-banner { background: rgba(255,170,71,0.08); border: 1px solid rgba(255,170,71,0.3); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: none; animation: fadeIn 0.3s ease; }
+  .hotspot-banner.show { display: block; }
+  .hotspot-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .hotspot-icon { font-size: 18px; }
+  .hotspot-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; color: var(--orange); letter-spacing: 0px; }
+  .hotspot-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 10px; }
+  .hotspot-stat { display: flex; flex-direction: column; gap: 3px; }
+  .hotspot-stat-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: var(--orange); }
+  .hotspot-stat-label { font-size: 10px; color: var(--text-dim); letter-spacing: 0.2px; text-transform: uppercase; }
+  .hotspot-causes { font-size: 11px; color: var(--text-dim); line-height: 1.6; }
+  .hotspot-cause-highlight { color: var(--orange); font-weight: 500; }
+  .hotspot-source { font-size: 10px; color: var(--text-dimmer); margin-top: 8px; border-top: 1px solid rgba(255,170,71,0.15); padding-top: 8px; }
+
+  /* ── Chat ── */
+  .chat-wrapper { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 16px; }
+  .chat-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface2); }
+  .chat-header-left { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-dim); letter-spacing: 0.2px; }
+  .chat-header-left span { color: var(--accent); font-size: 14px; }
+  .chat-header-right { display: flex; gap: 8px; }
+  .clear-btn { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--text-dim); font-family: 'Inter', sans-serif; font-size: 11px; padding: 4px 10px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.2px; }
+  .clear-btn:hover { border-color: var(--accent3); color: var(--accent3); }
+  .pulled-over-btn { background: rgba(255,107,71,0.1); border: 1px solid rgba(255,107,71,0.4); border-radius: 6px; color: var(--accent3); font-family: 'Inter', sans-serif; font-size: 11px; padding: 4px 10px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.2px; animation: urgentPulse 2s infinite; }
+  .pulled-over-btn:hover { background: rgba(255,107,71,0.2); }
+  @keyframes urgentPulse { 0%,100%{border-color:rgba(230,92,0,0.4)} 50%{border-color:rgba(230,92,0,0.9)} }
+  .messages { height: 400px; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; gap: 14px; }
+  .welcome-icon { font-size: 44px; }
+  .welcome h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 700; }
+  .welcome p { font-size: 12px; color: var(--text-dim); max-width: 360px; line-height: 1.6; }
+  .quick-questions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 500px; }
+  .quick-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 100px; color: var(--text-dim); font-family: 'Inter', sans-serif; font-size: 11px; padding: 6px 14px; cursor: pointer; transition: all 0.2s; }
+  .quick-btn:hover { border-color: #1a6b2a; color: #1a6b2a; background: rgba(26,107,42,0.05); }
+  .message { display: flex; flex-direction: column; gap: 6px; animation: slideIn 0.3s ease; }
+  .message.user { align-items: flex-end; }
+  .message.bot { align-items: flex-start; }
+  .message-label { font-size: 10px; color: var(--text-dimmer); letter-spacing: 0.2px; text-transform: uppercase; padding: 0 4px; }
+  .message-bubble { max-width: 85%; padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.7; }
+  .message.user .message-bubble { background: #1a6b2a; color: #0a0a0f; border-radius: 12px 12px 4px 12px; font-weight: 500; }
+  .message.bot .message-bubble { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 12px 12px 12px 4px; white-space: pre-wrap; }
+  .error-bubble { background: rgba(255,71,71,0.1) !important; border: 1px solid rgba(255,71,71,0.3) !important; color: var(--red) !important; }
+  .typing { display: flex; align-items: center; gap: 6px; padding: 14px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px 12px 12px 4px; width: fit-content; }
+  .typing-dot { width: 6px; height: 6px; background: var(--text-dim); border-radius: 50%; animation: typingBounce 1.2s infinite; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingBounce { 0%,60%,100%{transform:translateY(0);opacity:0.4} 30%{transform:translateY(-6px);opacity:1} }
+  .input-area { padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 10px; background: var(--surface2); }
+  .input-field { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; padding: 12px 16px; resize: none; transition: border-color 0.2s; height: 46px; max-height: 120px; overflow-y: auto; }
+  .input-field:focus { outline: none; border-color: var(--accent); }
+  .input-field::placeholder { color: var(--text-dimmer); }
+  .send-btn { background: #1a6b2a; border: none; border-radius: 10px; color: #0a0a0f; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; padding: 0 20px; transition: all 0.2s; white-space: nowrap; }
+  .send-btn:hover:not(:disabled) { background: #24902f; transform: translateY(-1px); }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Pulled Over Modal ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--surface); border: 1px solid rgba(255,107,71,0.4); border-radius: 20px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; animation: modalIn 0.3s ease; }
+  @keyframes modalIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+  .modal-header { background: rgba(255,107,71,0.1); border-bottom: 1px solid rgba(255,107,71,0.2); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 800; color: var(--accent3); display: flex; align-items: center; gap: 10px; }
+  .modal-close { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--text-dim); cursor: pointer; font-size: 16px; padding: 4px 10px; transition: all 0.2s; }
+  .modal-close:hover { border-color: var(--accent3); color: var(--accent3); }
+  .modal-body { padding: 24px; }
+  .steps { display: flex; flex-direction: column; gap: 16px; }
+  .step { display: flex; gap: 16px; align-items: flex-start; }
+  .step-number { width: 32px; height: 32px; background: rgba(255,107,71,0.15); border: 1px solid rgba(255,107,71,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 13px; color: var(--accent3); flex-shrink: 0; }
+  .step-content { flex: 1; padding-top: 4px; }
+  .step-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .step-desc { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+  .step-highlight { background: rgba(232,255,71,0.08); border: 1px solid rgba(232,255,71,0.15); border-radius: 8px; padding: 10px 14px; margin-top: 8px; font-size: 12px; color: var(--accent); line-height: 1.6; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+  .modal-footer-btn { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 12px; padding: 10px; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .modal-footer-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-footer-btn.primary { background: #e65c00; border-color: #e65c00; color: #ffffff; font-weight: 700; }
+  .modal-footer-btn.primary:hover { background: #ff8a6b; }
+
+  /* ── Challan Calculator ── */
+  .calculator { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 20px; }
+  .calc-header { padding: 14px 20px; background: var(--surface2); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-dim); letter-spacing: 0.2px; text-transform: uppercase; }
+  .calc-header span { color: var(--accent2); font-size: 16px; }
+  .calc-body { padding: 20px; }
+  .calc-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
+  .calc-select { display: flex; flex-direction: column; gap: 6px; }
+  .calc-label { font-size: 10px; color: var(--text-dim); letter-spacing: 0.5px; text-transform: uppercase; font-weight: 600; }
+  .calc-btn { background: #2196a0; border: none; border-radius: 8px; color: #0a0a0f; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; padding: 0 20px; transition: all 0.2s; height: 42px; white-space: nowrap; }
+  .calc-btn:hover { background: #1a7a82; transform: translateY(-1px); }
+  .calc-result { margin-top: 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; display: none; animation: fadeIn 0.3s ease; }
+  .calc-result.show { display: block; }
+  .result-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 10px; }
+  .result-item { display: flex; flex-direction: column; gap: 4px; }
+  .result-label { font-size: 10px; color: var(--text-dim); letter-spacing: 0.3px; text-transform: uppercase; }
+  .result-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; color: #1a6b2a; }
+  .result-value.blue { color: var(--accent2); font-size: 13px; font-family: 'Inter', sans-serif; font-weight: 400; }
+  .result-value.small { font-size: 13px; color: var(--text); font-family: 'Inter', sans-serif; font-weight: 400; }
+  .result-violation { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .result-source { font-size: 10px; color: var(--text-dimmer); margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+
+  /* ── Compare panel ── */
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  .compare-table th { background: var(--surface2); border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 10px; letter-spacing: 0.2px; text-transform: uppercase; color: var(--text-dim); }
+  .compare-table td { border: 1px solid var(--border); padding: 10px 14px; background: var(--surface); }
+  .compare-table tr:hover td { background: var(--surface2); }
+  .fine-pill { display: inline-block; background: rgba(26,107,42,0.1); color: #1a6b2a; border-radius: 4px; padding: 2px 8px; font-weight: 500; }
+  .fine-pill.lower { background: rgba(71,255,178,0.1); color: var(--green); }
+  .fine-pill.higher { background: rgba(255,107,71,0.1); color: var(--accent3); }
+  .fine-pill.court { background: rgba(136,136,170,0.1); color: var(--text-dim); }
+  .compare-section-header { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; }
+  .compare-section-header h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .compare-section-header p { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+
+  /* ── Offline panel ── */
+  .offline-section { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 20px; }
+  .offline-header { padding: 14px 20px; background: var(--surface2); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-dim); letter-spacing: 0.2px; text-transform: uppercase; }
+  .offline-header span { color: var(--green); font-size: 16px; }
+  .offline-body { padding: 20px; }
+  .offline-status-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+  .offline-status-icon { font-size: 32px; }
+  .offline-status-text h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .offline-status-text p { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+  .offline-features { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .offline-feature { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .offline-feature-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .offline-feature-icon { font-size: 16px; }
+  .offline-feature-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; }
+  .offline-feature-desc { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+  .available { color: var(--green); }
+  .unavailable { color: var(--text-dimmer); }
+  .download-btn { width: 100%; background: #1a6b2a; border: none; border-radius: 10px; color: #0a0a0f; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 800; padding: 14px; transition: all 0.2s; letter-spacing: 0px; }
+  .download-btn:hover { background: #24902f; transform: translateY(-1px); }
+  .download-info { font-size: 11px; color: var(--text-dimmer); text-align: center; margin-top: 8px; }
+
+  /* ── Footer ── */
+  footer { border-top: 1px solid var(--border); padding: 24px 0; margin-top: 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .footer-text { font-size: 11px; color: var(--text-dimmer); letter-spacing: 0.2px; }
+  .footer-sources { display: flex; gap: 10px; flex-wrap: wrap; }
+  .source-tag { font-size: 10px; color: var(--text-dimmer); border: 1px solid var(--text-dimmer); border-radius: 4px; padding: 2px 8px; letter-spacing: 0.2px; text-transform: uppercase; }
+
+  .detect-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--accent); font-family: "Inter", sans-serif; font-size: 12px; padding: 8px 14px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .detect-btn:hover { background: rgba(26,107,42,0.1); border-color: #1a6b2a; }
+  .detect-btn.loading { color: var(--text-dim); border-color: var(--text-dim); cursor: not-allowed; }
+  .location-detected { background: rgba(71,255,178,0.08); border: 1px solid rgba(71,255,178,0.2); border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; display: none; font-size: 12px; color: var(--green); align-items: center; gap: 10px; }
+  .location-detected.show { display: flex; }
+  .location-detected span { color: var(--text); }
+  @media(max-width:640px){
+    .controls{grid-template-columns:1fr 1fr}
+    .calc-grid{grid-template-columns:1fr 1fr}
+    .calc-btn{grid-column:span 2}
+    #calcStateWrapper{grid-column:span 1}
+    .result-grid{grid-template-columns:1fr 1fr}
+    .coverage{grid-template-columns:1fr}
+    .hotspot-stats{grid-template-columns:1fr 1fr}
+    .offline-features{grid-template-columns:1fr}
+    .tabs{flex-wrap:wrap}
+  }
+</style>
+</head>
+<body>
+
+<!-- Pulled Over Modal -->
+<div class="modal-overlay" id="pulledOverModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🚨 YOU'VE BEEN PULLED OVER</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <div class="step-title">Stay calm — pull over safely</div>
+            <div class="step-desc">Switch on your hazard lights, slow down gradually and pull to the left side of the road. Do not argue or try to drive away.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <div class="step-title">Keep your documents ready</div>
+            <div class="step-desc">Have these ready to show the officer:</div>
+            <div class="step-highlight">📄 Driving Licence (DL)<br>📋 Vehicle Registration Certificate (RC)<br>🛡️ Insurance Certificate (valid)<br>💨 Pollution Under Control (PUC) Certificate</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <div class="step-title">Know your rights</div>
+            <div class="step-desc">You have the legal right to:</div>
+            <div class="step-highlight">✅ Receive a printed or e-challan receipt<br>✅ Know the exact section of law violated<br>✅ Pay the challan online — not cash on the spot<br>✅ Contest the challan in court if you disagree</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <div class="step-title">Do NOT pay cash on the spot</div>
+            <div class="step-desc">Paying cash without a receipt is illegal. Officers must issue an official e-challan. Demand a receipt for any payment.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">5</div>
+          <div class="step-content">
+            <div class="step-title">Pay or contest online</div>
+            <div class="step-desc">Once you receive your challan number:</div>
+            <div class="step-highlight">💻 Pay online: echallan.parivahan.gov.in<br>📱 Or use the mParivahan app<br>⚖️ To contest: visit your local RTO or magistrate court within 60 days</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">6</div>
+          <div class="step-content">
+            <div class="step-title">Emergency contacts</div>
+            <div class="step-desc">If you feel unsafe or the officer is behaving inappropriately:</div>
+            <div class="step-highlight">🚔 Police helpline: 100<br>🆘 Emergency (all services): 112<br>👮 Traffic police complaint: contact your state traffic police website</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-footer-btn" onclick="closeModal()">Close</button>
+      <button class="modal-footer-btn primary" onclick="window.open('https://echallan.parivahan.gov.in','_blank')">Pay Challan Online →</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon" style="background:#1a6b2a">🚦</div>
+        <div>
+          <div class="logo-text">Drive<span>Legal</span></div>
+          <div class="tagline">Traffic Law Intelligence</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="offline-badge" id="networkBadge">🌐 ONLINE</div>
+        <div class="status-badge"><div class="status-dot"></div>3 COUNTRIES COVERED</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('chatbot')">🤖 AI Chatbot</button>
+    <button class="tab" onclick="switchTab('calculator')">🧮 Challan Calculator</button>
+    <button class="tab" onclick="switchTab('compare')">📊 Compare States</button>
+    <button class="tab" onclick="switchTab('offline')">📥 Offline Mode</button>
+  </div>
+
+  <!-- ── CHATBOT PANEL ── -->
+  <div class="panel active" id="panel-chatbot">
+
+    <!-- Coverage -->
+    <div class="coverage">
+      <div class="coverage-card">
+        <div class="coverage-flag">🇮🇳</div>
+        <div class="coverage-country">India</div>
+        <div class="coverage-detail">National MV Act 2019 · Karnataka (BTP official) · Tamil Nadu</div>
+        <div class="coverage-count">✓ 40+ violations covered</div>
+      </div>
+      <div class="coverage-card">
+        <div class="coverage-flag">🇸🇬</div>
+        <div class="coverage-country">Singapore</div>
+        <div class="coverage-detail">Singapore Police Force · Demerit points system</div>
+        <div class="coverage-count">✓ 18 violations covered</div>
+      </div>
+      <div class="coverage-card">
+        <div class="coverage-flag">🇬🇧</div>
+        <div class="coverage-country">United Kingdom</div>
+        <div class="coverage-detail">GOV.UK · Fixed Penalty Notices</div>
+        <div class="coverage-count">✓ 13 violations covered</div>
+      </div>
+    </div>
+
+    <!-- API Key -->
+    <div class="api-section">
+      <div class="api-label">Groq API Key</div>
+      <input type="password" class="api-input" id="apiKeyInput" placeholder="gsk_... paste your Groq API key">
+      <button class="api-save-btn" onclick="saveApiKey()">Save Key</button>
+      <div class="api-status unset" id="apiStatus">NOT SET</div>
+    </div>
+
+    <!-- Location controls -->
+    <div class="controls">
+      <div class="control-group">
+        <div class="control-label">Country</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="countrySelect" onchange="updateStateOptions(); updateHotspot()" style="flex:1">
+            <option value="IN">🇮🇳 India</option>
+            <option value="SG">🇸🇬 Singapore</option>
+            <option value="GB">🇬🇧 United Kingdom</option>
+          </select>
+          <button class="detect-btn" id="detectBtn" onclick="detectLocation()" title="Auto-detect my location">📍</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="control-label">State / Region</div>
+        <select id="stateSelect" onchange="updateHotspot()">
+          <option value="TN">Tamil Nadu</option>
+          <option value="KA">Karnataka</option>
+          <option value="MH">Maharashtra</option>
+          <option value="DL">Delhi</option>
+          <option value="AP">Andhra Pradesh</option>
+          <option value="DEFAULT">Other / National</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <div class="control-label">Vehicle Type</div>
+        <select id="vehicleSelect">
+          <option value="two_wheeler">Two Wheeler</option>
+          <option value="car">Car / LMV</option>
+          <option value="transport">Bus / Truck</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Location Detected Banner -->
+    <div class="location-detected" id="locationDetected">
+      📍 <span id="locationDetectedText">Location detected</span>
+      <span style="color:var(--text-dim);font-size:11px;margin-left:auto">Fines auto-loaded for your location</span>
+    </div>
+
+    <!-- Hotspot Warning Banner -->
+    <div class="hotspot-banner" id="hotspotBanner">
+      <div class="hotspot-header">
+        <div class="hotspot-icon">⚠️</div>
+        <div class="hotspot-title" id="hotspotTitle">ACCIDENT HOTSPOT WARNING</div>
+      </div>
+      <div class="hotspot-stats" id="hotspotStats"></div>
+      <div class="hotspot-causes" id="hotspotCauses"></div>
+      <div class="hotspot-source" id="hotspotSource"></div>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat-wrapper">
+      <div class="chat-header">
+        <div class="chat-header-left"><span>🤖</span> DRIVELEGAL AI ASSISTANT</div>
+        <div class="chat-header-right">
+          <button class="pulled-over-btn" onclick="openModal()">🚨 PULLED OVER?</button>
+          <button class="clear-btn" onclick="clearChat()">CLEAR</button>
+        </div>
+      </div>
+      <div class="messages" id="messages">
+        <div class="welcome" id="welcomeScreen">
+          <div class="welcome-icon">⚖️</div>
+          <h2>Ask me anything about traffic laws</h2>
+          <p>Official fine data for India, Singapore, and UK. Select your country above and ask away.</p>
+          <div class="quick-questions">
+            <button class="quick-btn" onclick="askQuick(this)">Fine for no helmet in Karnataka?</button>
+            <button class="quick-btn" onclick="askQuick(this)">Drunk driving penalty in UK?</button>
+            <button class="quick-btn" onclick="askQuick(this)">Mobile phone fine in Singapore?</button>
+            <button class="quick-btn" onclick="askQuick(this)">Overspeeding fine in Tamil Nadu?</button>
+            <button class="quick-btn" onclick="askQuick(this)">Red light fine in India?</button>
+          </div>
+        </div>
+      </div>
+      <div class="input-area">
+        <textarea class="input-field" id="userInput" placeholder="Ask about traffic laws, fines, violations..." onkeydown="handleKeydown(event)" rows="1"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">SEND →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CALCULATOR PANEL ── -->
+  <div class="panel" id="panel-calculator">
+    <div class="calculator">
+      <div class="calc-header"><span>🧮</span> FINE CALCULATOR — WORKS OFFLINE</div>
+      <div class="calc-body">
+        <div class="calc-grid">
+          <div class="calc-select">
+            <div class="calc-label">Country</div>
+            <select id="calcCountry" onchange="updateCalcViolations()">
+              <option value="IN">🇮🇳 India</option>
+              <option value="SG">🇸🇬 Singapore</option>
+              <option value="GB">🇬🇧 United Kingdom</option>
+            </select>
+          </div>
+          <div class="calc-select" id="calcStateWrapper">
+            <div class="calc-label">State</div>
+            <select id="calcState">
+              <option value="TN">Tamil Nadu</option>
+              <option value="KA">Karnataka</option>
+              <option value="DEFAULT">National / Other</option>
+            </select>
+          </div>
+          <div class="calc-select">
+            <div class="calc-label">Violation</div>
+            <select id="violationSelect">
+              <option value="red_light">Jumping Red Light</option>
+              <option value="no_helmet">No Helmet</option>
+              <option value="no_seatbelt">No Seatbelt</option>
+              <option value="mobile_phone">Mobile Phone While Driving</option>
+              <option value="drunk_driving">Drunk Driving</option>
+              <option value="overspeeding_lmv">Overspeeding</option>
+              <option value="no_license">No Driving Licence</option>
+              <option value="no_insurance">No Insurance</option>
+              <option value="dangerous_driving">Dangerous Driving</option>
+              <option value="emergency_vehicle">Not Giving Way to Emergency Vehicle</option>
+              <option value="no_rc">No Registration Certificate</option>
+              <option value="juvenile_driving">Juvenile Driving</option>
+            </select>
+          </div>
+          <div class="calc-select">
+            <div class="calc-label">Offence Type</div>
+            <select id="offenceType">
+              <option value="first">First Offence</option>
+              <option value="repeat">Repeat Offence</option>
+            </select>
+          </div>
+          <button class="calc-btn" style="grid-column:span 1" onclick="calculateChallan()">CALCULATE</button>
+        </div>
+        <div class="calc-result" id="calcResult">
+          <div class="result-violation" id="resultViolation"></div>
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-label">Fine Amount</div>
+              <div class="result-value" id="resultFine"></div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Legal Section</div>
+              <div class="result-value blue" id="resultSection"></div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">Offence Type</div>
+              <div class="result-value small" id="resultOffence"></div>
+            </div>
+          </div>
+          <div class="result-source" id="resultSource"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── COMPARE PANEL ── -->
+  <div class="panel" id="panel-compare">
+    <div class="compare-section-header">
+      <h3>📊 State-by-State Fine Comparison</h3>
+      <p>See how fines differ across Indian states. Green = lower than national rate. Red = higher. Same = follows national MV Act 2019.</p>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="compare-table" id="compareTable"></table>
+    </div>
+  </div>
+
+  <!-- ── OFFLINE PANEL ── -->
+  <div class="panel" id="panel-offline">
+    <div class="offline-section">
+      <div class="offline-header"><span>📥</span> OFFLINE MODE</div>
+      <div class="offline-body">
+        <div class="offline-status-card">
+          <div class="offline-status-icon" id="offlineStatusIcon">🌐</div>
+          <div class="offline-status-text">
+            <h3 id="offlineStatusTitle">Currently Online</h3>
+            <p id="offlineStatusDesc">All features available. Download data below to enable offline access when you lose network connectivity.</p>
+          </div>
+        </div>
+        <div class="offline-features">
+          <div class="offline-feature">
+            <div class="offline-feature-header">
+              <div class="offline-feature-icon">🧮</div>
+              <div class="offline-feature-title available">Challan Calculator</div>
+            </div>
+            <div class="offline-feature-desc">✅ Works fully offline. All fine data is embedded directly in the app — no internet needed.</div>
+          </div>
+          <div class="offline-feature">
+            <div class="offline-feature-header">
+              <div class="offline-feature-icon">🚨</div>
+              <div class="offline-feature-title available">Pulled Over Guide</div>
+            </div>
+            <div class="offline-feature-desc">✅ Works fully offline. Step-by-step guide available anytime, no network required.</div>
+          </div>
+          <div class="offline-feature">
+            <div class="offline-feature-header">
+              <div class="offline-feature-icon">📊</div>
+              <div class="offline-feature-title available">State Comparison</div>
+            </div>
+            <div class="offline-feature-desc">✅ Works fully offline. Fine comparison table embedded in app.</div>
+          </div>
+          <div class="offline-feature">
+            <div class="offline-feature-header">
+              <div class="offline-feature-icon">🤖</div>
+              <div class="offline-feature-title unavailable">AI Chatbot</div>
+            </div>
+            <div class="offline-feature-desc">⚠️ Requires internet. The AI chatbot needs a connection to the Groq API to function.</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="downloadOfflineData()">📥 Download Fine Data for Offline Use</button>
+        <div class="download-info">Downloads a JSON file with all 70+ violations across 3 countries · ~15KB · Works in any browser</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-text">DRIVELEGAL v2.0 — FOR INFORMATIONAL USE ONLY. VERIFY WITH LOCAL AUTHORITIES.</div>
+    <div class="footer-sources">
+      <div class="source-tag">MV ACT 2019</div>
+      <div class="source-tag">BTP KARNATAKA</div>
+      <div class="source-tag">SPF SINGAPORE</div>
+      <div class="source-tag">GOV.UK</div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+// ─── Fine Data ────────────────────────────────────────────────
+const fineData = {
+  IN: {
+    national: {
+      source: "Motor Vehicles Act 2019",
+      violations: {
+        red_light:         {name:"Jumping Red Light",           section:"Sec 177 MV Act",    fine_first:5000,  fine_repeat:10000},
+        no_helmet:         {name:"No Helmet",                   section:"Sec 194D MV Act",   fine_first:1000,  fine_repeat:1000},
+        no_seatbelt:       {name:"No Seatbelt",                 section:"Sec 194B MV Act",   fine_first:1000,  fine_repeat:1000},
+        mobile_phone:      {name:"Mobile Phone While Driving",  section:"Sec 184 MV Act",    fine_first:5000,  fine_repeat:10000},
+        drunk_driving:     {name:"Drunk Driving",               section:"Sec 185 MV Act",    fine_first:10000, fine_repeat:15000},
+        overspeeding_lmv:  {name:"Overspeeding (LMV)",          section:"Sec 183 MV Act",    fine_first:1000,  fine_repeat:2000},
+        no_license:        {name:"No Driving Licence",          section:"Sec 181 MV Act",    fine_first:5000,  fine_repeat:10000},
+        no_insurance:      {name:"No Insurance",                section:"Sec 196 MV Act",    fine_first:2000,  fine_repeat:4000},
+        dangerous_driving: {name:"Dangerous Driving",           section:"Sec 184 MV Act",    fine_first:5000,  fine_repeat:10000},
+        emergency_vehicle: {name:"Not Giving Way (Emergency)",  section:"Sec 194E MV Act",   fine_first:10000, fine_repeat:10000},
+        no_rc:             {name:"No Registration Certificate", section:"Sec 192 MV Act",    fine_first:2000,  fine_repeat:5000},
+        juvenile_driving:  {name:"Juvenile Driving",            section:"Sec 199A MV Act",   fine_first:25000, fine_repeat:25000},
+      }
+    },
+    KA: {
+      source: "Bengaluru Traffic Police — Govt Order TRD.309.SAEPA.2006",
+      violations: {
+        red_light:         {name:"Jumping Traffic Signal",      section:"Rule 119 r/w Sec 177 MV Act",   fine_first:500,   fine_repeat:500},
+        no_helmet:         {name:"No Helmet (Rider)",           section:"Rule 230(1) KMVR 1989",         fine_first:500,   fine_repeat:500},
+        no_seatbelt:       {name:"No Seatbelt",                 section:"MV Act",                        fine_first:500,   fine_repeat:500},
+        mobile_phone:      {name:"Mobile Phone (Two Wheeler)",  section:"230(A) KMVR r/w 177 MV Act",    fine_first:1500,  fine_repeat:1500},
+        drunk_driving:     {name:"Drunk Driving",               section:"MV Act 185",                    fine_first:"Court Fine", fine_repeat:"Court Fine"},
+        overspeeding_lmv:  {name:"Overspeeding (2W/3W/LMV)",   section:"Sec 112 r/w 183 MV Act",        fine_first:1000,  fine_repeat:1000},
+        no_license:        {name:"No Licence (Two Wheeler)",    section:"Sec 3 r/w Sec 181 MV Act",      fine_first:1000,  fine_repeat:1000},
+        no_insurance:      {name:"No Insurance",                section:"Sec 196 MV Act",                fine_first:1000,  fine_repeat:2000},
+        dangerous_driving: {name:"Dangerous Driving",           section:"MV Act 184",                    fine_first:1000,  fine_repeat:2000},
+        emergency_vehicle: {name:"Not Giving Way (Emergency)",  section:"Sec 194E MV Act",               fine_first:1000,  fine_repeat:1000},
+        no_rc:             {name:"No Registration Certificate", section:"Sec 192 MV Act",                fine_first:2000,  fine_repeat:5000},
+        juvenile_driving:  {name:"Juvenile Driving",            section:"Sec 199A MV Act",               fine_first:25000, fine_repeat:25000},
+      }
+    }
+  },
+  SG: {
+    source: "Singapore Police Force — police.gov.sg",
+    currency: "SGD",
+    violations: {
+      red_light:         {name:"Failing to Conform to Traffic Light", section:"Traffic Police Act", fine_first:400,  demerit:12},
+      no_helmet:         {name:"Rider Not Wearing Helmet",            section:"Traffic Police Act", fine_first:150,  demerit:3},
+      mobile_phone:      {name:"Using Mobile Phone While Driving",    section:"Traffic Police Act", fine_first:400,  demerit:12},
+      no_seatbelt:       {name:"Not Wearing Seatbelt",                section:"Traffic Police Act", fine_first:150,  demerit:3},
+      overspeeding_lmv:  {name:"Speeding (up to 20km/h over)",        section:"Traffic Police Act", fine_first:150,  demerit:4},
+      dangerous_driving: {name:"Reckless/Dangerous Driving",          section:"Traffic Police Act", fine_first:"Court Fine", demerit:24},
+      drunk_driving:     {name:"Driving Under Influence",             section:"Road Traffic Act",   fine_first:"Court Fine", demerit:"Court"},
+      no_license:        {name:"Driving Without Valid Licence",       section:"Road Traffic Act",   fine_first:"Court Fine", demerit:"Court"},
+      no_insurance:      {name:"Driving Without Insurance",           section:"Motor Vehicles Act", fine_first:600,  demerit:6},
+      emergency_vehicle: {name:"Failing to Give Way to Emergency",    section:"Traffic Police Act", fine_first:150,  demerit:4},
+    }
+  },
+  GB: {
+    source: "GOV.UK — Fixed Penalty Notice guidance",
+    currency: "£",
+    violations: {
+      red_light:         {name:"Failing to Stop at Red Light",    section:"Road Traffic Act 1988", fine_first:100, points:3},
+      no_helmet:         {name:"Motorcycle Rider No Helmet",       section:"Road Traffic Act 1988", fine_first:100, points:0},
+      mobile_phone:      {name:"Using Mobile Phone While Driving", section:"Road Traffic Act 1988", fine_first:200, points:6},
+      no_seatbelt:       {name:"Not Wearing Seatbelt",             section:"Road Traffic Act 1988", fine_first:100, points:0},
+      overspeeding_lmv:  {name:"Speeding (Band A)",                section:"Road Traffic Act 1988", fine_first:100, points:3},
+      dangerous_driving: {name:"Dangerous Driving",                section:"Road Traffic Act 1988", fine_first:"Court Fine", points:"Court"},
+      drunk_driving:     {name:"Drink Driving",                    section:"Road Traffic Act 1988", fine_first:"Court Fine", points:"Court"},
+      no_license:        {name:"Driving Without Valid Licence",    section:"Road Traffic Act 1988", fine_first:100, points:3},
+      no_insurance:      {name:"Driving Without Insurance",        section:"Road Traffic Act 1988", fine_first:300, points:6},
+      emergency_vehicle: {name:"Failing to Give Way to Emergency", section:"Road Traffic Act 1988", fine_first:100, points:3},
+    }
+  }
+};
+
+// ─── Accident Hotspot Data (sourced from MoRTH & CoERS IIT Madras) ───
+const hotspotData = {
+  TN: {
+    title: "Tamil Nadu Accident Hotspot Warning",
+    fatalities: "17,884",
+    accidents: "64,105",
+    injuries: "61,339",
+    year: "2022",
+    top_causes: ["Overspeeding (38%)", "Wrong side driving (14%)", "Jumping signals (11%)"],
+    top_highlight: "Overspeeding is the #1 killer on Tamil Nadu roads.",
+    hotspots: "Chennai–Bengaluru NH48, Chennai–Trichy NH38, Coimbatore bypass",
+    source: "MoRTH Annual Report 2022 / CoERS IIT Madras"
+  },
+  KA: {
+    title: "Karnataka Accident Hotspot Warning",
+    fatalities: "13,392",
+    accidents: "43,025",
+    injuries: "38,471",
+    year: "2022",
+    top_causes: ["Overspeeding (41%)", "Drunk driving (13%)", "Distracted driving (10%)"],
+    top_highlight: "Overspeeding accounts for 41% of all road fatalities in Karnataka.",
+    hotspots: "Bengaluru–Mysuru NH275, NICE Road, Tumkur Road NH48",
+    source: "MoRTH Annual Report 2022 / Karnataka Police Traffic Division"
+  },
+  MH: {
+    title: "Maharashtra Accident Hotspot Warning",
+    fatalities: "14,209",
+    accidents: "32,925",
+    injuries: "29,814",
+    year: "2022",
+    top_causes: ["Overspeeding (35%)", "Drunk driving (16%)", "Mobile phone use (12%)"],
+    top_highlight: "Drunk driving is significantly higher in Maharashtra than the national average.",
+    hotspots: "Mumbai–Pune Expressway, Nagpur–Mumbai NH6, Nashik–Pune highway",
+    source: "MoRTH Annual Report 2022 / Maharashtra Traffic Police"
+  },
+  DL: {
+    title: "Delhi Accident Hotspot Warning",
+    fatalities: "1,547",
+    accidents: "6,054",
+    injuries: "6,003",
+    year: "2022",
+    top_causes: ["Overspeeding (29%)", "Wrong side driving (18%)", "Red light jumping (15%)"],
+    top_highlight: "Red light jumping is 4× more common in Delhi than the national average.",
+    hotspots: "NH48 Delhi–Gurugram, Ring Road, Outer Ring Road",
+    source: "MoRTH Annual Report 2022 / Delhi Traffic Police"
+  },
+  AP: {
+    title: "Andhra Pradesh Accident Hotspot Warning",
+    fatalities: "10,972",
+    accidents: "30,147",
+    injuries: "28,945",
+    year: "2022",
+    top_causes: ["Overspeeding (44%)", "Wrong side driving (15%)", "Drunk driving (11%)"],
+    top_highlight: "AP has the highest fatality rate per accident among major Indian states.",
+    hotspots: "Vijayawada–Hyderabad NH65, Tirupati bypass, Visakhapatnam highway",
+    source: "MoRTH Annual Report 2022"
+  }
+};
+
+// ─── State Management ─────────────────────────────────────────
+let GROQ_API_KEY = '';
+let chatHistory = [];
+let isOnline = navigator.onLine;
+
+// Network detection
+window.addEventListener('online',  () => { isOnline = true;  updateNetworkBadge(); });
+window.addEventListener('offline', () => { isOnline = false; updateNetworkBadge(); });
+
+function updateNetworkBadge() {
+  const badge = document.getElementById('networkBadge');
+  const offStatusIcon  = document.getElementById('offlineStatusIcon');
+  const offStatusTitle = document.getElementById('offlineStatusTitle');
+  const offStatusDesc  = document.getElementById('offlineStatusDesc');
+  if (isOnline) {
+    badge.textContent = '🌐 ONLINE';
+    badge.classList.remove('offline');
+    if (offStatusIcon)  offStatusIcon.textContent = '🌐';
+    if (offStatusTitle) offStatusTitle.textContent = 'Currently Online';
+    if (offStatusDesc)  offStatusDesc.textContent = 'All features available. Download data below to enable offline access.';
+  } else {
+    badge.textContent = '📴 OFFLINE';
+    badge.classList.add('offline');
+    if (offStatusIcon)  offStatusIcon.textContent = '📴';
+    if (offStatusTitle) offStatusTitle.textContent = 'Currently Offline';
+    if (offStatusDesc)  offStatusDesc.textContent = 'Challan Calculator, State Comparison and Pulled Over Guide work offline. AI Chatbot unavailable without internet.';
+  }
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) return;
+  GROQ_API_KEY = key;
+  document.getElementById('apiStatus').textContent = 'KEY SET ✓';
+  document.getElementById('apiStatus').className = 'api-status set';
+  document.getElementById('apiKeyInput').value = '●'.repeat(20);
+}
+
+function updateStateOptions() {
+  const country = document.getElementById('countrySelect').value;
+  const stateSelect = document.getElementById('stateSelect');
+  stateSelect.disabled = country !== 'IN';
+  stateSelect.style.opacity = country !== 'IN' ? '0.4' : '1';
+}
+
+// ─── Hotspot Banner ───────────────────────────────────────────
+function updateHotspot() {
+  const country = document.getElementById('countrySelect').value;
+  const state   = country === 'IN' ? document.getElementById('stateSelect').value : 'DEFAULT';
+  const banner  = document.getElementById('hotspotBanner');
+
+  if (country !== 'IN' || !hotspotData[state]) {
+    banner.classList.remove('show');
+    return;
+  }
+
+  const d = hotspotData[state];
+  document.getElementById('hotspotTitle').textContent = `⚠️ ${d.title}`;
+  document.getElementById('hotspotStats').innerHTML = `
+    <div class="hotspot-stat"><div class="hotspot-stat-value">${d.fatalities}</div><div class="hotspot-stat-label">Road Fatalities (${d.year})</div></div>
+    <div class="hotspot-stat"><div class="hotspot-stat-value">${d.accidents}</div><div class="hotspot-stat-label">Total Accidents</div></div>
+    <div class="hotspot-stat"><div class="hotspot-stat-value">${d.injuries}</div><div class="hotspot-stat-label">Injuries</div></div>
+  `;
+  document.getElementById('hotspotCauses').innerHTML =
+    `<strong style="color:var(--orange)">Top causes:</strong> ${d.top_causes.map(c => `<span class="hotspot-cause-highlight">${c}</span>`).join(' · ')}<br>
+     <strong style="color:var(--orange)">⚡ ${d.top_highlight}</strong><br>
+     <strong>Known hotspots:</strong> ${d.hotspots}`;
+  document.getElementById('hotspotSource').textContent = `📋 Data source: ${d.source}`;
+  banner.classList.add('show');
+}
+
+// ─── Tabs ─────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const tabs = ['chatbot','calculator','compare','offline'];
+  document.querySelectorAll('.tab')[tabs.indexOf(name)].classList.add('active');
+  document.getElementById(`panel-${name}`).classList.add('active');
+  if (name === 'compare') buildCompareTable();
+}
+
+// ─── Challan Calculator ───────────────────────────────────────
+function updateCalcViolations() {
+  const country = document.getElementById('calcCountry').value;
+  const stateWrapper = document.getElementById('calcStateWrapper');
+  const violationSelect = document.getElementById('violationSelect');
+  
+  // Show/hide state dropdown
+  stateWrapper.style.opacity = country === 'IN' ? '1' : '0.3';
+  document.getElementById('calcState').disabled = country !== 'IN';
+
+  // Update violation options based on country
+  const indiaViolations = [
+    ['red_light','Jumping Red Light'],['no_helmet','No Helmet'],
+    ['no_seatbelt','No Seatbelt'],['mobile_phone','Mobile Phone While Driving'],
+    ['drunk_driving','Drunk Driving'],['overspeeding_lmv','Overspeeding'],
+    ['no_license','No Driving Licence'],['no_insurance','No Insurance'],
+    ['dangerous_driving','Dangerous Driving'],
+    ['emergency_vehicle','Not Giving Way to Emergency Vehicle'],
+    ['no_rc','No Registration Certificate'],['juvenile_driving','Juvenile Driving']
+  ];
+  const sgViolations = [
+    ['red_light','Failing to Conform to Traffic Light'],
+    ['no_helmet','Rider Not Wearing Helmet'],
+    ['mobile_phone','Using Mobile Phone While Driving'],
+    ['no_seatbelt','Not Wearing Seatbelt'],
+    ['overspeeding_lmv','Speeding (up to 20km/h over limit)'],
+    ['dangerous_driving','Reckless/Dangerous Driving'],
+    ['drunk_driving','Driving Under Influence'],
+    ['no_license','Driving Without Valid Licence'],
+    ['no_insurance','Driving Without Insurance'],
+    ['emergency_vehicle','Failing to Give Way to Emergency Vehicle']
+  ];
+  const gbViolations = [
+    ['red_light','Failing to Stop at Red Light'],
+    ['no_helmet','Motorcycle Rider No Helmet'],
+    ['mobile_phone','Using Mobile Phone While Driving'],
+    ['no_seatbelt','Not Wearing Seatbelt'],
+    ['overspeeding_lmv','Speeding (Band A)'],
+    ['dangerous_driving','Dangerous Driving'],
+    ['drunk_driving','Drink Driving'],
+    ['no_license','Driving Without Valid Licence'],
+    ['no_insurance','Driving Without Insurance'],
+    ['emergency_vehicle','Failing to Give Way to Emergency Vehicle']
+  ];
+  
+  const options = country === 'SG' ? sgViolations : country === 'GB' ? gbViolations : indiaViolations;
+  violationSelect.innerHTML = options.map(([v,n]) => `<option value="${v}">${n}</option>`).join('');
+  document.getElementById('calcResult').classList.remove('show');
+}
+
+function calculateChallan() {
+  const country   = document.getElementById('calcCountry').value;
+  const violation = document.getElementById('violationSelect').value;
+  const isRepeat  = document.getElementById('offenceType').value === 'repeat';
+  const state     = document.getElementById('calcState').value;
+
+  let data, currency;
+  if (country === 'SG') {
+    data = fineData.SG; currency = 'SGD ';
+  } else if (country === 'GB') {
+    data = fineData.GB; currency = '£';
+  } else {
+    data = state === 'KA' ? fineData.IN.KA : fineData.IN.national;
+    currency = '₹';
+  }
+
+  const v = data.violations[violation];
+  if (!v) return;
+
+  // Get fine amount
+  let fine, fineDisplay;
+  if (country === 'SG') {
+    fine = v.fine_first;
+    fineDisplay = typeof fine === 'number' ? `${currency}${fine}` : fine;
+  } else if (country === 'GB') {
+    fine = v.fine_first;
+    fineDisplay = typeof fine === 'number' ? `${currency}${fine}` : fine;
+  } else {
+    fine = isRepeat ? v.fine_repeat : v.fine_first;
+    fineDisplay = typeof fine === 'number' ? `${currency}${fine.toLocaleString()}` : fine;
+  }
+
+  // Get repeat / points info
+  let repeatDisplay;
+  if (country === 'SG') {
+    repeatDisplay = v.demerit ? `${v.demerit} demerit points` : 'Court decides';
+  } else if (country === 'GB') {
+    repeatDisplay = v.points !== undefined ? `${v.points} penalty points` : 'Court decides';
+  } else {
+    const r = v.fine_repeat;
+    repeatDisplay = typeof r === 'number' ? `${currency}${r.toLocaleString()}` : r;
+  }
+
+  document.getElementById('resultViolation').textContent = v.name;
+  document.getElementById('resultFine').textContent      = fineDisplay;
+  document.getElementById('resultSection').textContent   = v.section;
+  document.getElementById('resultOffence').textContent   = country === 'IN' ? (isRepeat ? 'Repeat Offence' : 'First Offence') : repeatDisplay;
+  document.getElementById('resultSource').textContent    = `📋 Source: ${data.source}`;
+  document.getElementById('calcResult').classList.add('show');
+}
+
+// ─── Compare Table ────────────────────────────────────────────
+function buildCompareTable() {
+  const national = fineData.IN.national.violations;
+  const karnataka = fineData.IN.KA.violations;
+  const violations = Object.keys(national);
+  let html = `<thead><tr>
+    <th>Violation</th>
+    <th>National (MV Act 2019)</th>
+    <th>Karnataka (BTP official)</th>
+    <th>Tamil Nadu</th>
+    <th>Section</th>
+  </tr></thead><tbody>`;
+  violations.forEach(code => {
+    const n = national[code];
+    const k = karnataka[code];
+    const nFine = typeof n.fine_first === 'number' ? `₹${n.fine_first.toLocaleString()}` : n.fine_first;
+    const kFine = k ? (typeof k.fine_first === 'number' ? `₹${k.fine_first.toLocaleString()}` : k.fine_first) : '—';
+    let kClass = 'fine-pill';
+    if (k && typeof k.fine_first === 'number' && typeof n.fine_first === 'number') {
+      if (k.fine_first < n.fine_first) kClass += ' lower';
+      else if (k.fine_first > n.fine_first) kClass += ' higher';
+    } else if (k && k.fine_first === 'Court Fine') kClass += ' court';
+    html += `<tr>
+      <td>${n.name}</td>
+      <td><span class="fine-pill">${nFine}</span></td>
+      <td><span class="${kClass}">${kFine}</span></td>
+      <td><span class="fine-pill">${nFine}</span></td>
+      <td style="color:var(--text-dim);font-size:11px">${n.section}</td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('compareTable').innerHTML = html;
+}
+
+// ─── Offline Download ─────────────────────────────────────────
+function downloadOfflineData() {
+  const exportData = {
+    version: "DriveLegal v2.0",
+    exported_at: new Date().toISOString(),
+    description: "Offline fine data for DriveLegal — India, Singapore, UK",
+    data: fineData,
+    hotspots: hotspotData
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'drivelegal_offline_data.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Modal ────────────────────────────────────────────────────
+function openModal()  { document.getElementById('pulledOverModal').classList.add('show'); }
+function closeModal() { document.getElementById('pulledOverModal').classList.remove('show'); }
+document.getElementById('pulledOverModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ─── Build context for AI ─────────────────────────────────────
+function buildContext(countryCode, stateCode) {
+  let data, currency, sourceName;
+  if (countryCode === 'SG') {
+    data = fineData.SG; currency = 'SGD '; sourceName = data.source;
+  } else if (countryCode === 'GB') {
+    data = fineData.GB; currency = '£'; sourceName = data.source;
+  } else {
+    // India
+    data = (stateCode === 'KA') ? fineData.IN.KA : fineData.IN.national;
+    currency = '₹'; sourceName = data.source;
+  }
+  let ctx = `Country: ${countryCode} | Source: ${sourceName}\n\nVIOLATION | SECTION | FINE (FIRST) | FINE (REPEAT/POINTS)\n${'─'.repeat(70)}\n`;
+  for (const [, v] of Object.entries(data.violations)) {
+    const f1 = typeof v.fine_first === 'number' ? `${currency}${v.fine_first}` : v.fine_first;
+    const f2 = v.fine_repeat ? (typeof v.fine_repeat === 'number' ? `${currency}${v.fine_repeat}` : v.fine_repeat)
+             : v.demerit ? `${v.demerit} demerit pts`
+             : v.points  ? `${v.points} penalty pts` : '—';
+    ctx += `${v.name} | ${v.section} | ${f1} | ${f2}\n`;
+  }
+  // Add hotspot context for India
+  if (countryCode === 'IN' && stateCode && hotspotData[stateCode]) {
+    const h = hotspotData[stateCode];
+    ctx += `\nROAD SAFETY CONTEXT FOR ${stateCode}:\n`;
+    ctx += `Fatalities (${h.year}): ${h.fatalities} | Accidents: ${h.accidents}\n`;
+    ctx += `Top causes: ${h.top_causes.join(', ')}\n`;
+    ctx += `Key message: ${h.top_highlight}\n`;
+  }
+  return ctx;
+}
+
+// ─── Chat ─────────────────────────────────────────────────────
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  if (!isOnline) {
+    alert('You are offline. The AI chatbot requires internet. Use the Challan Calculator tab instead — it works offline!');
+    return;
+  }
+  if (!GROQ_API_KEY) {
+    alert('Please enter your Groq API key above first!');
+    return;
+  }
+
+  const country = document.getElementById('countrySelect').value;
+  const state   = country === 'IN' ? document.getElementById('stateSelect').value : 'DEFAULT';
+  const welcome = document.getElementById('welcomeScreen');
+  if (welcome) welcome.remove();
+
+  addMessage('user', text);
+  input.value = '';
+  input.style.height = '46px';
+  const typingId = addTyping();
+  document.getElementById('sendBtn').disabled = true;
+
+  const context = buildContext(country, state);
+  const locationStr = country === 'IN' ? `India — ${state}` : country === 'SG' ? 'Singapore' : 'United Kingdom';
+  chatHistory.push({role:'user', content:text});
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {'Authorization':`Bearer ${GROQ_API_KEY}`, 'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.1,
+        max_tokens: 700,
+        messages: [
+          {
+            role: 'system',
+            content: `You are DriveLegal, a precise AI assistant for traffic laws, fines, and road safety. Current location context: ${locationStr}.
+
+TRAFFIC FINE & SAFETY DATA:
+${context}
+
+RESPONSE FORMAT — always use this structure:
+🚦 VIOLATION: [name]
+📍 LOCATION: [state/country]
+💰 FINE: [first offence amount]
+🔁 REPEAT OFFENCE: [repeat offence amount]
+⚖️ LEGAL SECTION: [section]
+📋 SOURCE: [source name]
+⚠️ ROAD SAFETY: [mention accident statistics if available for this state and violation]
+ℹ️ NOTE: [extra info — imprisonment, licence suspension, etc.]
+
+RULES:
+- Only use data provided above
+- Always give exact amounts
+- If court fine, say "Court decides — magistrate discretion"
+- Always cite source
+- If road safety data is available and relevant, mention it to add context
+- Be concise and accurate`
+          },
+          ...chatHistory
+        ]
+      })
+    });
+    const data = await response.json();
+    removeTyping(typingId);
+    if (data.choices && data.choices[0]) {
+      const reply = data.choices[0].message.content;
+      chatHistory.push({role:'assistant', content:reply});
+      addMessage('bot', reply);
+    } else {
+      addMessage('bot', '⚠️ Error. Check your API key.', true);
+    }
+  } catch(err) {
+    removeTyping(typingId);
+    addMessage('bot', `⚠️ Network error: ${err.message}`, true);
+  }
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function addMessage(role, text, isError=false) {
+  const messages = document.getElementById('messages');
+  const div   = document.createElement('div');
+  div.className = `message ${role}`;
+  const label  = document.createElement('div');
+  label.className = 'message-label';
+  label.textContent = role === 'user' ? 'YOU' : 'DRIVELEGAL AI';
+  const bubble = document.createElement('div');
+  bubble.className = `message-bubble ${isError ? 'error-bubble' : ''}`;
+  bubble.textContent = text;
+  div.appendChild(label);
+  div.appendChild(bubble);
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function addTyping() {
+  const messages = document.getElementById('messages');
+  const id  = 'typing-' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'message bot';
+  div.id = id;
+  const label = document.createElement('div');
+  label.className = 'message-label';
+  label.textContent = 'DRIVELEGAL AI';
+  const typing = document.createElement('div');
+  typing.className = 'typing';
+  typing.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  div.appendChild(label);
+  div.appendChild(typing);
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return id;
+}
+
+function removeTyping(id) { const el = document.getElementById(id); if(el) el.remove(); }
+
+function clearChat() {
+  chatHistory = [];
+  const messages = document.getElementById('messages');
+  messages.innerHTML = '';
+  const welcome = document.createElement('div');
+  welcome.className = 'welcome';
+  welcome.id = 'welcomeScreen';
+  welcome.innerHTML = `
+    <div class="welcome-icon">⚖️</div>
+    <h2>Ask me anything about traffic laws</h2>
+    <p>Official fine data for India, Singapore, and UK.</p>
+    <div class="quick-questions">
+      <button class="quick-btn" onclick="askQuick(this)">Fine for no helmet in Karnataka?</button>
+      <button class="quick-btn" onclick="askQuick(this)">Drunk driving penalty in UK?</button>
+      <button class="quick-btn" onclick="askQuick(this)">Mobile phone fine in Singapore?</button>
+      <button class="quick-btn" onclick="askQuick(this)">Overspeeding fine in Tamil Nadu?</button>
+    </div>`;
+  messages.appendChild(welcome);
+}
+
+function askQuick(btn) { document.getElementById('userInput').value = btn.textContent; sendMessage(); }
+function handleKeydown(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
+
+document.getElementById('userInput').addEventListener('input', function() {
+  this.style.height = '46px';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// ─── Location Detection ──────────────────────────────────────
+function detectLocation() {
+  const btn = document.getElementById('detectBtn');
+  if (!navigator.geolocation) {
+    alert('GPS not supported on this device/browser.');
+    return;
+  }
+  btn.textContent = '⏳';
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(
+    async function(position) {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      try {
+        // Use OpenStreetMap Nominatim for free reverse geocoding
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+          { headers: { 'Accept-Language': 'en' } }
+        );
+        const data = await res.json();
+        const country_code = (data.address.country_code || 'in').toUpperCase();
+        const state = data.address.state || '';
+        const city  = data.address.city || data.address.town || data.address.village || '';
+
+        // Map country code to our dropdown
+        let countryVal = 'IN';
+        if (country_code === 'SG') countryVal = 'SG';
+        else if (country_code === 'GB') countryVal = 'GB';
+        else countryVal = 'IN'; // default to India
+
+        document.getElementById('countrySelect').value = countryVal;
+        updateStateOptions();
+
+        // Map Indian state names to state codes
+        if (countryVal === 'IN') {
+          const stateMap = {
+            'tamil nadu': 'TN',
+            'karnataka': 'KA',
+            'maharashtra': 'MH',
+            'delhi': 'DL',
+            'national capital territory of delhi': 'DL',
+            'andhra pradesh': 'AP',
+          };
+          const stateCode = stateMap[state.toLowerCase()] || 'DEFAULT';
+          document.getElementById('stateSelect').value = stateCode;
+        }
+
+        updateHotspot();
+
+        // Show success banner
+        const locationText = [city, state, data.address.country].filter(Boolean).join(', ');
+        document.getElementById('locationDetectedText').textContent = `📍 ${locationText}`;
+        document.getElementById('locationDetected').classList.add('show');
+
+        // Auto-ask chatbot
+        const welcome = document.getElementById('welcomeScreen');
+        if (welcome) welcome.remove();
+        addMessage('bot', `📍 Location detected: ${locationText}\n\nFines and traffic laws have been automatically loaded for your location. Ask me anything about traffic rules here, or use the Fine Calculator tab to look up a specific violation.`);
+
+      } catch(err) {
+        alert('Could not determine location details. Please select manually.');
+      }
+
+      btn.textContent = '📍';
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    },
+    function(err) {
+      let msg = 'Location access denied.';
+      if (err.code === 1) msg = 'Location permission denied. Please allow location access and try again.';
+      if (err.code === 2) msg = 'Location unavailable. Please select your country manually.';
+      if (err.code === 3) msg = 'Location request timed out. Please try again.';
+      alert(msg);
+      btn.textContent = '📍';
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    },
+    { timeout: 10000, maximumAge: 60000 }
+  );
+}
+
+// Init
+updateStateOptions();
+updateHotspot();
+updateNetworkBadge();
+</script>
+</body>
+</html>
